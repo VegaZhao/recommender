@@ -11,7 +11,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 # 0          1      101       4
 # 1          1      102       3
 # 2          1      103       4
-df_data = pd.read_csv('/home/zwj/Desktop/recommend/uus_CF_demo.txt', header=None, names=['Movie_Id', 'Cust_Id', 'Rating'])
+df_data = pd.read_csv('/home/zwj/Desktop/recommend/uus_CF_demo.txt', header=None, names=['Movie', 'User', 'Rating'])
 
 # 将数据集拆分为训练集和测试集，后三条为测试数据，其余的为训练数据
 df_train = df_data[0:-3]
@@ -29,7 +29,7 @@ df_test = df_data[-3:]
 # 105       4.0  NaN  5.0  5.0  NaN  NaN
 # 106       3.0  3.0  4.0  NaN  NaN  NaN
 # 107       NaN  NaN  4.0  5.0  4.0  NaN
-df_p = df_train.pivot_table(index='Cust_Id', columns='Movie_Id', values='Rating')
+df_p = df_train.pivot_table(index='User', columns='Movie', values='Rating')
 print('Shape User-Movie-Matrix:\t{}'.format(df_p.shape))
 
 ###################################推荐单个用户####################################
@@ -79,7 +79,7 @@ similar_user_index = np.argsort(similarity[user_index])[::-1]
 similar_user_score = np.sort(similarity[user_index])[::-1]
 
 # 找到该用户（101）没有打分的电影
-# Int64Index([5, 6], dtype='int64', name=u'Movie_Id')
+# Int64Index([5, 6], dtype='int64', name=u'Movie')
 unrated_movies = df_p.iloc[user_index][df_p.iloc[user_index].isna()].index
 
 # 计算前n位最相似用户的带权重的评分，并计算每部电影的平均得分
@@ -134,7 +134,7 @@ user_id_mapping = {id:i for i, id in enumerate(df_p_imputed.index)}
 # 创建prediction列表，存储预测结果
 prediction = []
 # 遍历测试集中的所有用户
-for user_id in df_test['Cust_Id'].unique():
+for user_id in df_test['User'].unique():
 
     # 用户相似度排序（索引）
     similar_user_index = np.argsort(similarity[user_id_mapping[user_id]])[::-1]
@@ -142,7 +142,7 @@ for user_id in df_test['Cust_Id'].unique():
     similar_user_score = np.sort(similarity[user_id_mapping[user_id]])[::-1]
 
 	# 遍历测试集中该用户对应的所有电影
-    for movie_id in df_test[df_test['Cust_Id']==user_id]['Movie_Id'].values:
+    for movie_id in df_test[df_test['User']==user_id]['Movie'].values:
 
         # 计算预测评分：计算前n位于该用户最相似用户的带权重的评分，并计算每部电影的平均得分
         score = (df_p_imputed.iloc[similar_user_index[:n_recommendation]][movie_id] * similar_user_score[:n_recommendation]).values.sum() / similar_user_score[:n_recommendation].sum()
@@ -156,15 +156,15 @@ for user_id in df_test['Cust_Id'].unique():
 # 105     6           3.888357
 # 106     6           4.334263
 # 107     6           4.138804
-df_pred = pd.DataFrame(prediction, columns=['Cust_Id', 'Movie_Id', 'Prediction']).set_index(['Cust_Id', 'Movie_Id'])
+df_pred = pd.DataFrame(prediction, columns=['User', 'Movie', 'Prediction']).set_index(['User', 'Movie'])
 
-# 将预测结果表df_pred与测试表df_test根据列['Cust_Id', 'Movie_Id']自然连接
+# 将预测结果表df_pred与测试表df_test根据列['User', 'Movie']自然连接
 #                   Rating  Prediction
 # Cust_Id Movie_Id
 # 105     6              5    3.888357
 # 106     6              4    4.334263
 # 107     6              4    4.138804
-df_pred = df_test.set_index(['Cust_Id', 'Movie_Id']).join(df_pred)
+df_pred = df_test.set_index(['User', 'Movie']).join(df_pred)
 
 # 获取labels 与 predictions
 y_true = df_pred['Rating'].values
