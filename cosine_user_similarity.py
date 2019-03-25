@@ -7,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 # 读取demo数据集
 # 格式：
-#     Movie_Id  Cust_Id  Rating
+#     Movie  User  Rating
 # 0          1      101       4
 # 1          1      102       3
 # 2          1      103       4
@@ -20,8 +20,8 @@ df_test = df_data[-3:]
 # 将训练集数据转换成透视表
 # 格式：
 # Shape User-Movie-Matrix:	(7, 6)
-# Movie_Id    1    2    3    4    5    6
-# Cust_Id
+# Movie    1    2    3    4    5    6
+# User
 # 101       4.0  3.0  4.0  5.0  NaN  NaN
 # 102       3.0  2.0  3.0  NaN  4.0  3.0
 # 103       4.0  4.0  3.0  4.0  NaN  NaN
@@ -33,15 +33,15 @@ df_p = df_train.pivot_table(index='User', columns='Movie', values='Rating')
 print('Shape User-Movie-Matrix:\t{}'.format(df_p.shape))
 
 ###################################推荐单个用户####################################
-# 设置推荐用户在数据集中的索引，本例中设置为训练集透视表中的第一位用户Cust_Id：101
+# 设置推荐用户在数据集中的索引，本例中设置为训练集透视表中的第一位用户User：101
 user_index = 0
 
 # 设置用于推荐的相似用户数
 n_recommendation = 3
 
 # 补充透视表中缺失的值，补充的值为用户的已评价电影的均值
-# Movie_Id         1         2    3         4         5         6
-# Cust_Id
+# Movie         1         2    3         4         5         6
+# User
 # 101       4.000000  3.000000  4.0  5.000000  4.000000  4.000000
 # 102       3.000000  2.000000  3.0  3.000000  4.000000  3.000000
 # 103       4.000000  4.000000  3.0  4.000000  3.750000  3.750000
@@ -84,8 +84,8 @@ unrated_movies = df_p.iloc[user_index][df_p.iloc[user_index].isna()].index
 
 # 计算前n位最相似用户的带权重的评分，并计算每部电影的平均得分
 # 1.前n位最相似用户的所有电影评分
-# Cust_Id   104       107       105
-# Movie_Id
+# User   104       107       105
+# Movie
 # 1         4.0  4.333333  4.000000
 # 2         3.0  4.333333  4.666667
 # 3         4.0  4.000000  5.000000
@@ -97,7 +97,7 @@ unrated_movies = df_p.iloc[user_index][df_p.iloc[user_index].isna()].index
 # [1.    0.993 0.99 ]
 # ==============================
 # 3.每部电影前n位最相似用户评分的加权求和
-# Movie_Id
+# Movie
 # 1    12.264332
 # 2    11.924443
 # 3    12.923447
@@ -110,7 +110,7 @@ unrated_movies = df_p.iloc[user_index][df_p.iloc[user_index].isna()].index
 # 2.983320098495457
 # ==============================
 # 5.每部电影前n位最相似用户评分的加权求和 / 前n位最相似用户的相似度之和
-# Movie_Id
+# Movie
 # 1    4.110967
 # 2    3.997038
 # 3    4.331901
@@ -121,7 +121,7 @@ unrated_movies = df_p.iloc[user_index][df_p.iloc[user_index].isna()].index
 mean_movie_recommendations = (df_p_imputed.iloc[similar_user_index[:n_recommendation]].T * similar_user_score[:n_recommendation]).sum(axis=1) / similar_user_score[:n_recommendation].sum()
 
 # 过滤出没有评价过的电影，并且按评分降序排序
-# Movie_Id
+# Movie
 # 6         4.332235
 # 5         4.221267
 best_movie_recommendations = mean_movie_recommendations[unrated_movies].sort_values(ascending=False).to_frame()
@@ -152,7 +152,7 @@ for user_id in df_test['User'].unique():
 
 # 将prediction列表转成DataFrame
 #                   Prediction
-# Cust_Id Movie_Id
+# User Movie
 # 105     6           3.888357
 # 106     6           4.334263
 # 107     6           4.138804
@@ -160,7 +160,7 @@ df_pred = pd.DataFrame(prediction, columns=['User', 'Movie', 'Prediction']).set_
 
 # 将预测结果表df_pred与测试表df_test根据列['User', 'Movie']自然连接
 #                   Rating  Prediction
-# Cust_Id Movie_Id
+# User Movie
 # 105     6              5    3.888357
 # 106     6              4    4.334263
 # 107     6              4    4.138804
