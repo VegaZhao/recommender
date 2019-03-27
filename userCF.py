@@ -32,10 +32,6 @@ df_test = df_data[-3:]
 df_p = df_train.pivot_table(index='User', columns='Movie', values='Rating')
 print('Shape User-Movie-Matrix:\t{}'.format(df_p.shape))
 
-###################################推荐单个用户####################################
-# 设置推荐用户在数据集中的索引，本例中设置为训练集透视表中的第一位用户User：101
-user_index = 0
-
 # 设置用于推荐的相似用户数
 n_recommendation = 3
 
@@ -70,6 +66,9 @@ similarity = cosine_similarity(df_p_imputed.values)
 #  [ 0.99  0.98  0.98  0.99  1.   -0.    0.99]
 #  [ 0.99  0.97  1.    0.99  1.    0.99  0.  ]]
 similarity -= np.eye(similarity.shape[0])
+###################################推荐单个用户####################################
+# 设置推荐用户在数据集中的索引，本例中设置为训练集透视表中的第一位用户User：101
+user_index = 0
 
 # 用户相似度排序（索引）
 # [3 6 4 5 1 2 0]
