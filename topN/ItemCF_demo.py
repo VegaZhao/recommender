@@ -5,10 +5,12 @@ import random
 import math
 import operator
 
-# item相似矩阵相似度最大值归一化（一种优化方案）
+# 相似矩阵相似度最大值归一化（一种优化方案）
 def NormalizeSimilarity(dict):
-    # 输入：一个二维字典
-    # 输出：一个二维字典
+	# 输入：
+	#	二维字典 {item_i: {item_k: similarity}}
+	# 输出：
+	#	二维字典 {item_i: {item_k: similarity}}
     maxW = 0
 
 	# 找到相似矩阵中相似度的最大值
@@ -32,7 +34,7 @@ def SplitData(data, M, k, seed):
 	#	k：选取前k个相似item
 	#	seed：随机种子
 	# 输出：
-	#	train, test 二维列表
+	#	train, test 二维列表 [item, user]
     test = []
     train = []
     random.seed(seed)
@@ -65,33 +67,35 @@ def ItemSimilarity(user_item):
 	# 统计item的观看量 N[i]记录观看电影i的用户数
     N = {}
     for u, items in user_item.items():
-        for id_i in items:
-            N.setdefault(id_i, 0)
-            N[id_i] += 1
-            for id_j in items:
-                if id_i == id_j:
+        for item_i in items:
+            N.setdefault(item_i, 0)
+            N[item_i] += 1
+            for item_j in items:
+                if item_i == item_j:
                     continue
-                C.setdefault(id_i, {})
-                C[id_i].setdefault(id_j, 0)
+                C.setdefault(item_i, {})
+                C[item_i].setdefault(item_j, 0)
 				# 统计观看了电影i和电影j的用户数
                 # 1.传统方法
-                C[id_i][id_j] += 1
+                C[item_i][item_j] += 1
                 # 2.优化方法，削弱了活跃用户的贡献度，用户观看电影越多其影响越弱
-                # C[id_i][id_j] = 1 / math.log(1 + len(items) * 1.0)
+                # C[item_i][item_j] = 1 / math.log(1 + len(items) * 1.0)
 	# 电影相似矩阵
     W = {}
     # W_sorted = {}
-    for id_i, related_items in C.items():
-		#  item1, {item2: num, item3: num}
-        for id_j, cij in related_items.items():
-            W.setdefault(id_i, {})
-            W[id_i].setdefault(id_j, 0)
+
+	#  item1, {item2: num, item3: num}
+    for item_i, related_items in C.items():
+
+        for item_j, cij in related_items.items():
+            W.setdefault(item_i, {})
+            W[item_i].setdefault(item_j, 0)
 			# 计算相似度
-            W[id_i][id_j] = cij / math.sqrt(N[id_i] * N[id_j])
+            W[item_i][item_j] = cij / math.sqrt(N[item_i] * N[item_j])
 
 	# 矩阵相似度从大到小排序
-    # for id_i in W:
-    #     W_sorted[id_i] = sorted(W[id_i].iteritems(), key = \
+    # for item_i in W:
+    #     W_sorted[item_i] = sorted(W[item_i].iteritems(), key = \
 		# 				operator.itemgetter(1), reverse=True)
 
 	# 优化方式（可选）：将相似矩阵相似度最大值归一化
@@ -106,25 +110,25 @@ def Recommendation(user_item, user_id, W, K):
 	#	W：电影相似矩阵
 	#	K：前K个最相似电影
 	# 输出：
-	#	rank：字典，该用户的推荐电影列表
+	#	rank：字典，该用户的推荐电影列表 {item_t:sim1, item_k:sim2}
 
 	# 存储用户推荐电影
     rank = {}
-	# 用户观看的电影集合
+	# 用户已观看的电影集合
     item_list = user_item[user_id]
 
 	# 开辟用户空子字典 ('rank: ', {user_id: {}})
     rank.setdefault(user_id, {})
-    for id_i in item_list:
+    for item_i in item_list:
 		# 在遍历电影i与相似矩阵中前K个电影j的相似度
-        for id_j, wj in sorted(W[id_i].items(), key=operator.itemgetter(1), reverse=True)[0:K]:
+        for item_j, wj in sorted(W[item_i].items(), key=operator.itemgetter(1), reverse=True)[0:K]:
 			# 如果电影j在该用户的电影观看列表中则跳过
-            if id_j in item_list:
+            if item_j in item_list:
                 continue
-            rank[user_id].setdefault(id_j, 0)
+            rank[user_id].setdefault(item_j, 0)
 			# 电影推荐度 = 用户兴趣度（或者评分）* 电影相似度
 			# 此例中用户观看过电影则兴趣度为1
-            rank[user_id][id_j] += 1 * wj
+            rank[user_id][item_j] += 1 * wj
     return rank
 
 if __name__ == '__main__':
