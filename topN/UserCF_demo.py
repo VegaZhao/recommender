@@ -5,10 +5,6 @@ import random
 import math
 import operator
 
-df_data = pd.read_csv('/home/zwj/Desktop/recommend/uus_CF_demo.txt', header=None, usecols = [0, 1], names=['Movie', 'User'])
-
-data = df_data.values
-
 # item相似矩阵相似度最大值归一化（一种优化方案）
 def NormalizeSimilarity(dict):
 	# 输入：
@@ -48,8 +44,6 @@ def SplitData(data, M, k, seed):
         else:
             train.append([user,item])
     return train, test
-
-train, test = SplitData(data, 2, 1, 1)
 
 # 将列表转成user-item字典
 def UserItemDict(data):
@@ -163,5 +157,5 @@ if __name__ == '__main__':
 	item_user = ItemUserDict(data)
 	user_sim = UserSimilarity(item_user)
 	rank_list = Recommendation(user_item, 102, user_sim, 3)
-  print rank_list
+  	print rank_list
 
