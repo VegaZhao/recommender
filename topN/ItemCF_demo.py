@@ -60,7 +60,7 @@ def UserItemDict(data):
 def ItemSimilarity(user_item):
 	# 输入：
 	#	user-item字典 {user1: [item1, item2], user2: [item1, item3], ...}
-	# 倒排表，C[i][j]存储观看电影i和j的用户数
+	# C[i][j]存储观看电影i和j的用户数
     C = {}
 	# 统计item的观看量 N[i]记录观看电影i的用户数
     N = {}
