@@ -11,8 +11,8 @@ data = df_data.values
 
 # item相似矩阵相似度最大值归一化（一种优化方案）
 def NormalizeSimilarity(dict):
-	# 输入：一个二维字典
-	# 输出：一个二维字典
+    # 输入：一个二维字典
+    # 输出：一个二维字典
     maxW = 0
 
 	# 找到相似矩阵中相似度的最大值
