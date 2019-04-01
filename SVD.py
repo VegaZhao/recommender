@@ -5,30 +5,35 @@ import os
 from surprise import Reader, Dataset
 from surprise import NormalPredictor, BaselineOnly
 from surprise import KNNBasic, KNNWithMeans, KNNWithZScore, KNNBaseline
-from surprise import SVD, SVDpp, NMF
+from surprise import SVD, SVDpp, NMF, model_selection
 from sklearn.metrics import mean_squared_error
 
 
 def algo_predict(algo, user_id, movie_id):
     return algo.predict(user_id, movie_id).est
 
+# SVD训练和预测
 def CF(df_train, df_test):
 
     ###################### train ######################
+	# 读取数据
     reader = Reader()
-    algo = BaselineOnly()
+    algo = SVD()
     data = Dataset.load_from_df(df_train[['User', 'Movie', 'Rating']], reader)
 
-    # train 1: cross_validate
+	# 训练模型
+    # 方式 1: 交叉验证
+	# (算法, 数据, loss计算方式， CV=交叉验证次数
     # model_selection.cross_validate(algo, data, measures=['RMSE', 'MAE'], cv=3, verbose=True)
 
-    # train 2: not cross_validate
+    # 方式 2: 没有交叉验证
     trainset = data.build_full_trainset()
     algo.fit(trainset)
 
     ###################### test ######################
+	# 预测
     df_test['Predict_Score'] = df_test.apply(lambda row: algo_predict(algo, row['User'], row['Movie']), axis=1)
-    df_test.to_csv('df_test.csv')
+	# 计算RMSE
     rmse = np.sqrt(mean_squared_error(df_test['Predict_Score'], df_test['Rating']))
     print('\n\nTesting Result: {:.4f} RMSE'.format(rmse))
 
@@ -41,7 +46,5 @@ if __name__ == '__main__':
     df_test = df[-m:]
 
     print('df Shape: {}, trainset: {}, testset: {}'.format(df.shape, len(df_train), len(df_test)))
-    print(df.sample(5))
-    print('-'*50)
 
     CF(df_train, df_test)
