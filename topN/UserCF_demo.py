@@ -150,12 +150,26 @@ def Recommendation(user_item, user_id, W, K):
 
 
 if __name__ == '__main__':
+	
+	# 读取数据
 	df_data = pd.read_csv('/home/zwj/Desktop/recommend/uus_CF_demo.txt', header=None, usecols = [0, 1], names=['Movie', 'User'])
-	data = df_data.values
-	# train, test = SplitData(data, 2, 1, 1)
-	user_item = UserItemDict(data)
-	item_user = ItemUserDict(data)
-	user_sim = UserSimilarity(item_user)
-	rank_list = Recommendation(user_item, 102, user_sim, 3)
-  	print rank_list
+	data = df_data.values	
+	# 拆分训练集和测试集
+	train, test = SplitData(data, 2, 1, 1)	
+	# 生成user-tiem排列表
+	user_item = UserItemDict(train)
+	# 生成item-user排列表
+	item_user = ItemUserDict(train)
+	# 生成用户相似度字典
+	user_sim = UserSimilarity(item_user)	
+	# 定义test集的推荐字典
+	test_reco_list = {}
+	
+	# 遍历test数据集
+	for test_user in test:
+		# 生成单用户推荐列表
+		rank_list = Recommendation(user_item, test_user[0], user_sim, 3)		
+		# 合并到总的推荐字典中
+		test_reco_list.update(rank_list)
+	print test_reco_list
 
