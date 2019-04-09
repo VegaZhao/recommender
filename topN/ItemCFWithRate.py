@@ -21,7 +21,7 @@ def NormalizeSimilarity(dict):
         if maxW < tmp:
             maxW = tmp
 
-	# 将所有相似度除以最大值
+    # 将所有相似度除以最大值
     for idx, item in dict.items():
         for i in item:
             item[i] /= maxW
@@ -30,7 +30,7 @@ def NormalizeSimilarity(dict):
 
 # 按比例随机分配训练数据和测试数据
 def SplitData(data, M, k, seed):
-	# 输入：
+    # 输入：
 	#	data: 二维矩阵 [user, item, rating]
 	#	M：测试集占比，训练集:测试集 = M:1
 	#	k：选取前k个相似item
@@ -49,20 +49,20 @@ def SplitData(data, M, k, seed):
 
 # 将列表转成user-item字典
 def UserItemDict(data):
-	# 输入：
+    # 输入：
 	#	二维列表 [user, item, rating]
 	# 输出：
 	#	user_item字典 {user1 : {item1 : rate1, item2 : rate2}, ...}}
 	user_item = {}
-	for user, item, rate in data:
-		if user not in user_item:
-			user_item[user] = {}
-		user_item[user].update({item : rate})
-	return user_item
+    for user, item, rate in data:
+        if user not in user_item:
+            user_item[user] = {}
+        user_item[user].update({item : rate})
+    return user_item
 
 # 计算item之间的相似度
 def ItemSimilarity(user_item):
-	# 输入：
+    # 输入：
 	#	user-item字典 {user1 : {item1 : rate1, item2 : rate2}, ...}}
 	# C[i][j]存储观看电影i和j的用户数
     C = {}
@@ -117,19 +117,19 @@ def Recommendation(user_item, user_id, W, K, R):
 
 	# 存储用户推荐电影
     rank = {}
-	# 开辟用户空子字典 ('rank: ', {user_id: {}})
+    # 开辟用户空子字典 ('rank: ', {user_id: {}})
     rank.setdefault(user_id, {})
 
-	# 如果该用户不在训练集中，则推荐空序列
+    # 如果该用户不在训练集中，则推荐空序列
     if user_id not in user_item:
         print('unvalid user_id(user_id not in user_item): ', user_id)
         return rank
 
 
-	# 用户已观看的电影集合
+    # 用户已观看的电影集合
     item_list = user_item[user_id]
 
-	# item_i:项目号， ri:对应的评分（兴趣度）
+    # item_i:项目号， ri:对应的评分（兴趣度）
     for item_i, ri in item_list.items():
 
         # 如果该用户不在相似度矩阵中，则推荐空序列
@@ -140,11 +140,11 @@ def Recommendation(user_item, user_id, W, K, R):
         # 在遍历电影i与相似矩阵中前K个电影j的相似度
         for item_j, wj in sorted(W[item_i].items(), key=operator.itemgetter(1), reverse=True)[0:K]:
 
-			# 如果电影j在该用户的电影观看列表中则跳过
+            # 如果电影j在该用户的电影观看列表中则跳过
             if item_j in item_list:
                 continue
             rank[user_id].setdefault(item_j, 0)
-			# 电影推荐度 = 用户评分（或者兴趣度）* 电影相似度
+            # 电影推荐度 = 用户评分（或者兴趣度）* 电影相似度
 			# 此例中用户观看过电影则兴趣度为1
             rank[user_id][item_j] += ri * wj
     rank_sorted = {}
