@@ -203,6 +203,10 @@ def main(df_train, df_test):
     prediction = []
     # 遍历测试集中的所有电影
     for user_id in df_test['User'].unique():
+	
+		# 如果是训练集中不存在的新用户，暂时跳过
+		if user_id not in user_id_mapping:
+			continue
         pred = recommend(df_p_arr, user_id, user_id_mapping, id_movie_mapping, True, estMethod=standEst)
         prediction.extend(pred)
 
