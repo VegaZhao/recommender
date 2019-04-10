@@ -5,6 +5,7 @@ import numpy as np
 import time
 from numpy import linalg as la
 from sklearn.metrics import mean_squared_error
+from sklearn.utils import shuffle
 
 
 def ecludSim(inA, inB):
@@ -53,7 +54,7 @@ def standEst(dataMat, user, simMeas, item):
 
         # 获取同时观看（给出评分）电影j和电影item的user索引号
         overLap = np.nonzero(np.logical_and(dataMat[:, item] > 0, \
-                                      dataMat[:, j] > 0))[0]
+                                            dataMat[:, j] > 0))[0]
         # 如果没有同时观看这两部电影的用户，则这两部电影相似度为0；
         # 反之计算两部电影的相似度
         if len(overLap) == 0:
@@ -61,7 +62,7 @@ def standEst(dataMat, user, simMeas, item):
         else:
             similarity = simMeas(dataMat[overLap, item], \
                                  dataMat[overLap, j])
-        print 'the %d and %d similarity is: %f' % (item, j, similarity)
+        # print 'the %d and %d similarity is: %f' % (item, j, similarity)
 
         # 将所有与item电影相似的电影相似度叠加，同时相似度加权评分叠加
         simTotal += similarity
@@ -115,7 +116,7 @@ def svdEst(dataMat, user, simMeas, item):
         # 比较电影j与电影item的相似度
         similarity = simMeas(xformedItems[item, :].T, \
                              xformedItems[j, :].T)
-        print 'the %d and %d similarity is: %f' % (item, j, similarity)
+        # print 'the %d and %d similarity is: %f' % (item, j, similarity)
         # 将所有与item电影相似的电影相似度叠加，同时相似度加权评分叠加
         simTotal += similarity
         ratSimTotal += similarity * userRating
@@ -126,6 +127,7 @@ def svdEst(dataMat, user, simMeas, item):
     else:
         pred = ratSimTotal / simTotal
     return pred
+
 
 # 推荐系统
 def recommend(dataMat, user, user_idx_mapping, idx_item_mapping, \
@@ -174,8 +176,20 @@ def recommend(dataMat, user, user_idx_mapping, idx_item_mapping, \
             userItemScores.append((user, idx_item_mapping[item], estimatedScore))
         return userItemScores
 
-def main(df_train, df_test):
 
+# 计算全局评分均值
+def globalMean(df_train):
+    # 计算所有电影的平均评分
+    ratings_mean = df_train.mean(axis=0).sort_values(ascending=False).rename('Rating_Mean').to_frame()
+
+    global_mean = ratings_mean.loc['Rating', 'Rating_Mean']
+
+    return global_mean
+
+
+def main(df_train, df_test):
+    #
+    global_rating_mean = globalMean(df_train)
     # 将训练集数据转换成透视表
     df_p = df_train.pivot_table(index='User', columns='Movie', values='Rating')
     print('Shape User-Movie-Matrix:\t{}'.format(df_p.shape))
@@ -203,17 +217,25 @@ def main(df_train, df_test):
     prediction = []
     # 遍历测试集中的所有电影
     for user_id in df_test['User'].unique():
-	
-		# 如果是训练集中不存在的新用户，暂时跳过
-		if user_id not in user_id_mapping:
-			continue
+        # 如果是训练集中不存在的新用户，赋全局平均评分
+        if user_id not in user_id_mapping:
+            # 遍历测试集中该user的所有电影，并赋全局平均评分
+            for item_id in df_test[(df_test['User'] == user_id)]['Movie'].unique():
+                prediction.append((user_id, item_id, global_rating_mean))
+            continue
+        # 获取该用户的推荐列表
         pred = recommend(df_p_arr, user_id, user_id_mapping, id_movie_mapping, True, estMethod=standEst)
         prediction.extend(pred)
+
 
     df_pred = pd.DataFrame(prediction, columns=['User', 'Movie', 'Prediction']).set_index(['User', 'Movie'])
 
     # 将预测结果与测试集数据自然连接
     df_pred = df_test.set_index(['User', 'Movie']).join(df_pred)
+    print('biaoji1: ', len(df_pred))
+	
+    df_pred = df_test.set_index(['User', 'Movie']).join(df_pred).dropna()
+    print('biaoji2: ', len(df_pred))
 
     # 获取labels 与 predictions
     y_true = df_pred['Rating'].values
@@ -226,22 +248,25 @@ def main(df_train, df_test):
 
 
 if __name__ == '__main__':
-    df_data = pd.read_csv('/home/zwj/Desktop/recommend/uus_CF_demo.txt', header=None, names=['Movie', 'User', 'Rating'])
+    # df_data = pd.read_csv('/root/vega/netflix-prize-data/CF_demo.txt', header=None, names=['Movie', 'User', 'Rating'])
+    #
+    # # 将数据集拆分为训练集和测试集，后三条为测试数据，其余的为训练数据
+    # df_train = df_data[0:-3]
+    # df_test = df_data[-3:]
 
-    # 将数据集拆分为训练集和测试集
-    m = 3
-    df_train = df_data[0:-m]
-    df_test = df_data[-m:]
-'''	
-	df_data = pd.read_csv('/root/vega/netflix-prize-data/ft_ratings.txt', \
-							  sep=' ', header=None, names=['User', 'Movie', 'Rating'])
 
-	# sample:35497						  
-	# 将数据集拆分为训练集和测试集，后m条为测试数据，其余的为训练数据
-	m = 30000
+    df_data = pd.read_csv('/root/vega/netflix-prize-data/ft_ratings.txt', \
+                              sep=' ', header=None, names=['User', 'Movie', 'Rating'])
+    df_data = shuffle(df_data)
+    # sample:35497
+    # 将数据集拆分为训练集和测试集，后m条为测试数据，其余的为训练数据
+    m = 30000
 
-	df_train = df_data[0:m]
-	df_test = df_data[m:]
-'''
+    df_train = df_data[0:m]
+    df_test = df_data[m:]
+
+    start = time.time()
     # 执行主程序
     main(df_train, df_test)
+
+    print('time: ', time.time() - start)
