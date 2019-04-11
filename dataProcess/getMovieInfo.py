@@ -1,5 +1,6 @@
 # coding=utf-8
 import sys
+import time
 import pandas as pd
 
 # 解决ascii 编码字符串转换成"中间编码" unicode 时由于超出了其范围的问题
@@ -22,13 +23,16 @@ print('Shape Movie-Titles:\t{}'.format(movie_titles.shape))
 
 # 加载电影描述数据，包括名字，简介，投票总数，时长，风格
 movie_metadata = pd.read_csv('/home/zwj/Desktop/recommend/netflix_prize_data/movies_metadata.csv',\
-                low_memory=False)[['title', 'overview', 'vote_count', 'runtime', 'genres']].dropna()
+                low_memory=False)[['title', 'overview', 'release_date', 'vote_count', 'runtime', 'genres']].dropna()
 
+
+movie_metadata['year'] = movie_metadata['release_date'].apply(lambda x:time.strptime(x, "%Y-%m-%d").tm_year)
+movie_metadata = movie_metadata.drop('release_date', axis=1)
 print('Shape Movie-Metadata:\t{}'.format(movie_metadata.shape))
 # print(movie_metadata.sample(5))
 
 # 将两个电影数据合并
-movie_info = pd.merge(movie_titles, movie_metadata, on='title')
+movie_info = pd.merge(movie_titles, movie_metadata, on=['title', 'year'])
 
 print('Shape movie_info:\t{}'.format(movie_info.shape))
 # print(movie_info.sample(5))
