@@ -215,7 +215,8 @@ if __name__ == '__main__':
     m = 30000
     df_train = df_data[0:m]
     df_test = df_data[m:]
-    #
+	
+    # 推荐电影数
     reco_num = 5
     hot_rank = getHotItem(df_train, reco_num)
 
