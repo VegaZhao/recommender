@@ -196,36 +196,31 @@ def PrecisionRecall(test, recommend):
         n_recall += len(test[user])
         n_precision += len(reco_item)
     print('user_num: {}, hit: {}, n_recall: {}, n_precision: {} '.format(user_num, hit, n_recall, n_precision))
-	
+
     return [hit / (1.0 * n_recall), hit / (1.0 * n_precision)]
 
 if __name__ == '__main__':
 
-    # 读取数据
-    df_data = pd.read_csv('/home/zwj/Desktop/RSAlgorithms-master/data/ft_ratings.txt', \
-                          sep=' ', header=None, names=['User', 'Movie', 'Rating'])
+    # 读取数据,这是没有shuffle的数据
+    df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_train.csv', \
+                          usecols=[1, 2, 3])
 
-    print(df_data.sample(5))
-
+    df_test = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_test.csv', \
+                          usecols=[1, 2, 3])
     # sample num: 35497
-    data = df_data.values
-
-    # 拆分训练集和测试集
-    train, test = SplitData(data, 6, 1, 1)
- 
-    print(len(train), len(test))
+    print(len(df_train), len(df_test))
 
     # 生成user-tiem排列表
-    user_item = UserItemDict(train)
+    user_item = UserItemDict(df_train.values)
     # 生成item-user排列表
-    item_user = ItemUserDict(train)
+    item_user = ItemUserDict(df_train.values)
     # 生成用户相似度字典
     user_sim = UserSimilarity(item_user)
     # 定义test集的推荐字典
     test_reco_list = {}
 
     # 遍历test数据集
-    for test_user in set(np.array(test)[:,0]):
+    for test_user in df_test['User'].unique():
 		# 生成单用户推荐列表
 		rank_list = Recommendation(user_item, int(test_user), user_sim, 20, 5)
 		# 合并到总的推荐字典中
@@ -233,7 +228,7 @@ if __name__ == '__main__':
     print test_reco_list
 
 
-    test_user_item = TestUserItemDict(test)
+    test_user_item = TestUserItemDict(df_test.values)
     recall, precision = PrecisionRecall(test_user_item, test_reco_list)
 
     print(recall, precision)

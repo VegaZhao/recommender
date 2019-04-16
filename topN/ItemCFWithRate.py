@@ -149,29 +149,23 @@ def Recommendation(user_item, user_id, W, K, R, hot_rank):
         # item_i:项目号， ri:对应的评分（兴趣度）
         for item_i, ri in item_list.items():
 
-            # 如果该用户不在相似度矩阵中，则推荐空序列
+            # 如果该item不在相似度矩阵中，则推荐空序列
             if item_i not in W:
                 print('unvalid item_id(item_id not in W): ', item_i)
                 continue
 
-            # 该用户所有观看电影中是否存在训练集中标识
-            item_in_train = False
             # 在遍历电影i与相似矩阵中前K个电影j的相似度
             for item_j, wj in sorted(W[item_i].items(), key=operator.itemgetter(1), reverse=True)[0:K]:
 
                 # 如果电影j在该用户的电影观看列表中则跳过
                 if item_j in item_list:
                     continue
-                # 有一部存在即置为True，就可以推荐这部电影相似的电影
-                item_in_train = True
+
                 rank[user_id].setdefault(item_j, 0)
                 # 电影推荐度 = 用户评分（或者兴趣度）* 电影相似度
                 # 此例中用户观看过电影则兴趣度为1
                 rank[user_id][item_j] += ri * wj
 
-            # 如果该用户在测试集中观看的电影均不在训练集中，推荐热门电影
-            if item_in_train == False:
-                rank[user_id] = hot_rank
     rank_sorted = {}
     rank_sorted[user_id] = sorted(rank[user_id].items(), key=operator.itemgetter(1), reverse=True)[0:R]
 
@@ -188,8 +182,6 @@ def PrecisionRecall(test, recommend):
     user_num = 0
     for user, items in test.items():
         # 推荐电影列表
-        print('notice'*10)
-        print(recommend[user])
         reco_item = [item for item, score in recommend[user]]
         # 推荐电影命中列表
         hit_list = [item for item in reco_item if item in test[user]]

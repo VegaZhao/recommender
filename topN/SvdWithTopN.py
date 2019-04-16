@@ -62,12 +62,13 @@ def getHotItem(df_train, N=5):
         r += 1
     return hot_rank
 
-def recommendation(model, user_item, user_id, item_set, R):
+def recommendation(model, user_item, user_id, item_set, hot_rank, R):
     # 输入：
     #   model: 训练的模型
     #	user_item: 训练集中user-item字典 {user1 : {item1 : rate1, item2 : rate2}, ...}}
     #	user_id：推荐的用户id
     #   item_set: 训练集中的电影集合
+	#	hot_rank: 热门电影列表
     #   R：推荐列表中电影个数
     # 输出：
     #	rank：字典，该用户的推荐电影列表 {item_t:ratet, item_k:ratek}
