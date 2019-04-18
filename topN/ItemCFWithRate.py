@@ -5,6 +5,7 @@ import pandas as pd
 import random
 import math
 import operator
+import time
 from sklearn.utils import shuffle
 
 # 相似矩阵相似度最大值归一化（一种优化方案）
@@ -196,17 +197,15 @@ def PrecisionRecall(test, recommend):
 
 if __name__ == '__main__':
 
+    start = time.time()
     # 读取数据,这是没有shuffle的数据
-    df = pd.read_csv('/home/zwj/Desktop/RSAlgorithms-master/data/ft_ratings.txt', \
-                          sep=' ', header=None, names=['User', 'Movie', 'Rating'])
-    # sample num: 35497
-    df_data = shuffle(df)
-    print(df_data.sample(5))
+    df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_train.csv', \
+                          usecols=[1, 2, 3])
 
-    # 拆分训练集和测试集
-    m = 30000
-    df_train = df_data[0:m]
-    df_test = df_data[m:]
+    df_test = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_test.csv', \
+                          usecols=[1, 2, 3])
+    # sample num: 35497
+    print(len(df_train), len(df_test))
 	
     # 推荐电影数
     reco_num = 5
@@ -234,3 +233,4 @@ if __name__ == '__main__':
     recall, precision = PrecisionRecall(test_user_item, test_reco_list)
 
     print(recall, precision)
+    print('time: ', time.time() - start)

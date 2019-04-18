@@ -5,6 +5,7 @@ import pandas as pd
 import random
 import math
 import operator
+import time
 from sklearn.utils import shuffle
 
 # item相似矩阵相似度最大值归一化（一种优化方案）
@@ -201,6 +202,7 @@ def PrecisionRecall(test, recommend):
 
 if __name__ == '__main__':
 
+    start = time.time()
     # 读取数据,这是没有shuffle的数据
     df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_train.csv', \
                           usecols=[1, 2, 3])
@@ -232,3 +234,4 @@ if __name__ == '__main__':
     recall, precision = PrecisionRecall(test_user_item, test_reco_list)
 
     print(recall, precision)
+    print('time: ', time.time() - start)

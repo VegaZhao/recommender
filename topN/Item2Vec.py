@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import numpy as np
 import operator
+import time
 from sklearn.utils import shuffle
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -211,7 +212,7 @@ def recommendation(user_item, user_id, hot_rank, item_vec, K, R):
     return rank_sorted
 
 if __name__ == '__main__':
-
+    start = time.time()
     # 读取数据
     df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_train.csv', \
                           usecols=[1, 2, 3])
@@ -247,8 +248,9 @@ if __name__ == '__main__':
         # 合并到总的推荐字典中
         test_reco_list.update(rank_list)
     # test集中user实际观看的电影集合
-    test_user_item = UserItemDict(df_test.values)
+    test_user_item = userItemDict(df_test.values)
     # 计算召回率和准确率
     recall, precision = precisionRecall(test_user_item, test_reco_list)
 
     print(recall, precision)
+    print('time: ', time.time() - start)

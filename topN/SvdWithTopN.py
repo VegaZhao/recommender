@@ -9,6 +9,7 @@ from surprise import SVD, SVDpp, NMF, model_selection
 from sklearn.metrics import mean_squared_error
 from sklearn.utils import shuffle
 import math
+import time
 import operator
 
 
@@ -30,7 +31,7 @@ def trainModel(df_train):
     ###################### train ######################
     # 读取数据
     reader = Reader()
-    algo = SVDpp()
+    algo = SVD()
     data = Dataset.load_from_df(df_train[['User', 'Movie', 'Rating']], reader)
 
     # 训练模型
@@ -135,18 +136,15 @@ def rmse(df_test, model):
 
 if __name__ == '__main__':
 
+    start = time.time()
     # 读取数据,这是没有shuffle的数据
-    df_data = pd.read_csv('/home/zwj/Desktop/RSAlgorithms-master/data/ft_ratings.txt', \
-                          sep=' ', header=None, names=['User', 'Movie', 'Rating'])
+    df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_train_s.csv', \
+                          usecols=[1, 2, 3])
 
-    df = shuffle(df_data)
-    print(df.sample(5))
-
-    m = 30000
-    df_train = df[0:m]
-    df_test = df[m:]
-
-    print('df Shape: {}, trainset: {}, testset: {}'.format(df.shape, len(df_train), len(df_test)))
+    df_test = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_test_s.csv', \
+                          usecols=[1, 2, 3])
+    # sample num: 35497
+    print(len(df_train), len(df_test))
 
     # 推荐电影数
     reco_num = 5
@@ -163,7 +161,7 @@ if __name__ == '__main__':
     for test_user in df_test['User'].unique():
 
         # 生成单用户推荐列表
-        rank_list = recommendation(algo, user_item, test_user, df_train['Movie'].unique(), reco_num)
+        rank_list = recommendation(algo, user_item, test_user, df_train['Movie'].unique(), hot_rank, reco_num)
         # 合并到总的推荐字典中
         test_reco_list.update(rank_list)
 
@@ -172,3 +170,5 @@ if __name__ == '__main__':
 
     rmse = rmse(df_test, algo)
     print('\n\nTesting Result: {:.4f} RMSE \t{:.4f} Precision \t{:.4f} Recall'.format(rmse, precision, recall))
+    print(recall, precision)
+    print('time: ', time.time() - start)
