@@ -2,10 +2,12 @@
 import sys
 import pandas as pd
 import numpy as np
+import operator
+import time
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.utils import shuffle
-import operator
+
 
 # 解决ascii 编码字符串转换成"中间编码" unicode 时由于超出了其范围的问题
 defaultencoding = 'utf-8'
@@ -66,8 +68,8 @@ def precisionRecall(test, recommend):
 def overviewSimReco(movie_id = 12918, n = 10):
     # title:Men in Black id:12918
     # 加载电影信息
-    train_movie_set = pd.read_csv('/root/vega/data/normalize_data/shuffled_u3065_m374.csv')['Movie'].unique()
-    movie_metadata_raw = pd.read_csv('/root/vega/data/normalize_data/movie_info.csv',\
+    train_movie_set = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_train_s.csv')['Movie'].unique()
+    movie_metadata_raw = pd.read_csv('/home/zwj/Desktop/recommend/download/normalize_data/movie_info.csv',\
             usecols = [1, 3, 4])
 
     # 将电影名称设置为dataframe索引
@@ -153,17 +155,13 @@ def recommendation(user_item, user_id, hot_rank, K, R):
 
 if __name__ == '__main__':
 
+    start = time.time()
     # 读取数据,这是没有shuffle的数据
-    df_data = pd.read_csv('/root/vega/data/normalize_data/shuffled_u3065_m374.csv', \
-                     usecols = [1, 2, 3]) # User, Movie, Rating
+    df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_train_s.csv', \
+                          usecols=[1, 2, 3])
 
-    df_data = shuffle(df_data)
-    print(df_data.sample(5))
-
-    # 拆分训练集和测试集
-    m = 5000
-    df_train = df_data[0:-m]
-    df_test = df_data[-m:]
+    df_test = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_test_s.csv', \
+                          usecols=[1, 2, 3])
 
     # 推荐电影数
     reco_num = 5
@@ -177,7 +175,7 @@ if __name__ == '__main__':
     for test_user in df_test['User'].unique():
         print('user {} recommend'.format(test_user))
         # 生成单用户推荐列表
-        rank_list = recommendation(user_item, int(test_user), hot_rank, 5, 5)
+        rank_list = recommendation(user_item, int(test_user), hot_rank, 10, reco_num)
         # 合并到总的推荐字典中
         test_reco_list.update(rank_list)
 
@@ -185,3 +183,4 @@ if __name__ == '__main__':
     recall, precision = precisionRecall(test_user_item, test_reco_list)
 
     print(recall, precision)
+    print('time: ', time.time() - start)
