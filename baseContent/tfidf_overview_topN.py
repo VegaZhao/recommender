@@ -30,7 +30,7 @@ def getHotItem(df_train, N=5):
     #	df_train: 训练数据集
     #	N：推荐的电影数
     # 输出：
-    #	rank：字典，该用户的推荐电影列表 {user_id: {item_t:rate1, item_k:rate2}}
+    #	rank：字典，热门电影列表 {item_t:rate1, item_k:rate2}
     item_count = df_train.groupby('Movie')['Rating'].count().sort_values(ascending=False)
 
     hot_rank = {}
