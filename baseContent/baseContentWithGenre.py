@@ -132,6 +132,7 @@ def getItemgenre(movie_info_path, ave_score, K=10):
         for genre in item_genre[item]:
             if genre not in record_tmp:
                 record_tmp[genre] = {}
+            # 赋值item的平均得分，如果在item_ave_score字典中没有该item，赋值为0
             record_tmp[genre][item] = ave_score.get(item, 0)
 
     # 遍历genre-item中间表，生成genre-item排列表，每种风格记录前K部评分最高电影
@@ -171,7 +172,7 @@ def getUserProfile(data, item_genre, K=2):
             if genre not in record_tmp[user]:
                 # 初始化用户对每种风格的电影兴趣度
                 record_tmp[user][genre] = 0
-            # 用户风格兴趣度=电影评分*电影中该类型的权重比
+            # 用户风格兴趣度=电影评分*电影中该类型的权重比*时间权重
             record_tmp[user][genre] += rate * item_genre[item][genre] * getTimeScore(str2timestamp(date))
 
     for user in record_tmp:
