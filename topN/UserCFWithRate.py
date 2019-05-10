@@ -131,7 +131,7 @@ def recommendation(user_item, user_id, W, hot_rank, K, R):
     #   K：前K个最相似用户
     #   R：推荐列表中电影个数
     # 输出：
-    #	rank：该用户的推荐电影列表 type:dict, key:user, value:dict, key:item, value:sim
+    #	rank_sorted：该用户的推荐电影列表 type:dict, key:user, value:dict, key:item, value:sim
 
     # 存储用户推荐电影
     rank = {}
