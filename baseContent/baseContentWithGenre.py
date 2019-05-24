@@ -11,33 +11,61 @@ if sys.getdefaultencoding() != defaultencoding:
     reload(sys)
     sys.setdefaultencoding(defaultencoding)
 
+
 # 将日期字符串转换成时间戳
 def str2timestamp(time_str):
+    """
+    param:
+        time_str: 时间字符串
+    return: 
+        timestamp: 时间戳
+    """
     model = "%Y/%m/%d"
     time_array = time.strptime(time_str, model)
     timestamp = int(time.mktime(time_array))
     return timestamp
 
+
 # 计算时间得分
 def getTimeScore(timestamp):
+    """
+    param:
+        timestamp: 时间戳
+    return: 
+        时间权重得分
+    """
     # 训练集中最近的日期，根据实际情况需要更改
-    fix_time_stamp = 1135958400
+    fix_time_stamp = 893286638
     total_sec = 24 * 60 * 60 * 100
     delta = (fix_time_stamp - timestamp) / total_sec
     # 返回时间得分，日期最近权重越大
     return round(1.0 / (1 + delta), 3)
 
+
 # 将列表转成user-item字典
-def UserItemDict(data):
+def userItemDict(data):
+    """
+    param:
+        data: lsit [user, item, rating]
+    return:
+        user_item: 用户-电影排列表 type:dict, key=user, value=dict, key=item, value=rate
+    """
     user_item = {}
     for user, item, rate in data:
         if user not in user_item:
             user_item[user] = {}
-        user_item[user].update({item : rate})
+        user_item[user].update({item: rate})
     return user_item
 
 # 准确度/召回评价
 def precisionRecall(test, recommend):
+    """
+    param：
+        test: 测试集用户-电影排列表 type:dict, key:user, value:dict, key:item, value: rate
+        recommend: 用户推荐电影字典 type:dict, key:user, value:dict, key:item, value:score
+    return: 
+        [召回率, 准确率]
+    """
     # 推荐列表命中数
     hit = 0
     # 召回率分母（测试集中用户观看电影数）
@@ -60,12 +88,15 @@ def precisionRecall(test, recommend):
 
     return [hit / (1.0 * n_recall), hit / (1.0 * n_precision)]
 
+
 # 获得item的全局平均得分
 def getItemAveScore(data):
-    # 输入：
-    #   data: type ndarray [[user, item, rating]]
-    # 输出：
-    #   ave_score: item的全局平均得分字典 type dict, key:item, value: ratio
+    """
+    param:
+        data: type ndarray [[user, item, rating]]
+    return: 
+        ave_score: item的全局平均得分字典 type dict, key:item, value: ratio
+    """
 
     # 中间字典 key: item, value: list [rate_sum, rate_count]
     record_tmp = {}
@@ -81,44 +112,76 @@ def getItemAveScore(data):
         ave_score[item] = round(record_tmp[item][0] / record_tmp[item][1], 3)
     return ave_score
 
+def getGenre_old(genre_str):
+    """
+    param:
+        genre_str: 字符串 如"[{'id': 18, 'name': 'Drama'}, {'id': 35, 'name': 'Comedy'}, {'id': 10749, 'name': 'Romance'}]"
+    return:
+        genre_list: 风格列表 ['Drama', 'Comedy', 'Romance']
+    """
+    genre_list = []
+    empty = 0
+    # 当genres字段为"[]"时，跳过
+    if genre_str == "[]":
+        empty = 1
+        return genre_list, empty
+    # 字符串处理，先按"'}"分割字符串
+    raw_list = genre_str.strip().split("'}")
+    # 通过查找genre_str中最后一个"'"符号的位置，截取风格单词
+    for genre_str in raw_list:
+        idx = genre_str.rfind("'")
+        # 分割后最后一个元素是"]"，此时跳过
+        if idx == -1:
+            continue
+        # 获取风格元素
+        genre_list.append(genre_str[idx + 1:])
+    return genre_list, empty
+
+def getGenre(genre_str):
+    """
+    param:
+        genre_str: 字符串 如"Drama|Mystery|Romance|"
+    return:
+        genre_list: 风格列表 ['Drama', 'Mystery', 'Romance']
+    """
+    genre_list = []
+    empty = 0
+    # 当genres字段为空时，跳过
+    if genre_str == "" or genre_str == "unknown":
+        empty = 1
+        return genre_list, empty
+    # 字符串处理，按"|"分割字符串,list最后一个元素为空，所以去掉
+    genre_list = genre_str.strip().split("|")
+
+    return genre_list, empty
+
 # 获得item-genre排列表和genre-item倒排表
-def getItemgenre(movie_info_path, ave_score, K=10):
-    # 输入：
-    #   movie_info_path: 电影信息文件
-    #   ave_score: item的全局平均得分字典 type dict, key:item, value: ratio
-    #   K：genre_item排列表中记录前K个得分最高的item
-    # 输出：
-    #   item_genre： item-genre排列表，记录每部电影的风格，以及风格的权重比， \
-    #                type dict, key: item, value:dict, key:genre, value:ratio
-    #   genre_item： genre-item倒排表，记录每种风格中评分高的电影，\
-    #                type dict, key: genre, value:list [item1, item2, ...]
+def getItemgenre(movie_info_path, ave_score, K=50):
+    """
+    param:
+        movie_info_path: 电影信息文件
+        ave_score: item的全局平均得分字典 type dict, key:item, value: ratio
+        K: genre_item排列表中记录前K个得分最高的item
+    return: 
+        item_genre： item-genre排列表，记录每部电影的风格，以及风格的权重比， \
+                     type dict, key: item, value:dict, key:genre, value:ratio
+        genre_item： genre-item倒排表，记录每种风格中评分高的电影，\
+                     type dict, key: genre, value:list [item1, item2, ...]
+    """
 
     item_genre = {}
     genre_item = {}
     # 中间记录字典 key:genre, value: dict, key:item, value:ave_score
     record_tmp = {}
     # 读取电影信息
-    movie_metadata = pd.read_csv(movie_info_path, usecols=[1, 3, 7])
+    movie_metadata = pd.read_csv(movie_info_path, usecols=[0, 6])
 
-    for item, title, genres in movie_metadata.values:
+    for item, genres in movie_metadata.values:
         # 存储每部电影的风格
-        genre_list = []
-        # genres字段处理，genres是字符串存储的
-        # "[{'id': 18, 'name': 'Drama'}, {'id': 35, 'name': 'Comedy'}, {'id': 10749, 'name': 'Romance'}]"
-
-        # 当genres字段为"[]"时，跳过
-        if genres == "[]":
+        print(item, genres)
+        genre_list, f_void = getGenre(genres)
+        if f_void:
             continue
-        # 字符串处理，先按"'}"分割字符串
-        raw_list = genres.strip().split("'}")
-        # 通过查找genre_str中最后一个"'"符号的位置，截取风格单词
-        for genre_str in raw_list:
-            idx = genre_str.rfind("'")
-            # 分割后最后一个元素是"]"，此时跳过
-            if idx == -1:
-                continue
-            # 获取风格元素
-            genre_list.append(genre_str[idx + 1:])
         # 电影中每种风格的比重是=1/总的风格个数
         ratio = round(1.0 / len(genre_list), 3)
 
@@ -143,22 +206,25 @@ def getItemgenre(movie_info_path, ave_score, K=10):
             genre_item[genre].append(item)
     return item_genre, genre_item
 
+
 # 获得用户画像，即用户最喜爱的电影类型
-def getUserProfile(data, item_genre, K=2):
-    # 输入：
-    #   data: type ndarray [[user, item, rating]]
-    #   item_genre： item-genre排列表，记录每部电影的风格，以及风格的权重比， \
-    #                type dict, key: item, value:dict, key:genre, value:ratio
-    #   K: 用户最喜爱的电影类型个数
-    # 输出：
-    #   user_profile: 记录用户喜爱的风格和兴趣度，type:dict, key:user, value:list [genre, score]
+def getUserProfile(data, item_genre, K=3):
+    """
+    param:
+        data: type ndarray [[user, item, rating]]
+        item_genre: item-genre排列表，记录每部电影的风格，以及风格的权重比， \
+                    type dict, key: item, value:dict, key:genre, value:ratio
+        K: 用户最喜爱的电影类型个数 
+    return: 
+        user_profile: 记录用户喜爱的风格和兴趣度，type:dict, key:user, value:list [genre, score]
+    """
 
     # 得分阈值，大于等于阈值设置为喜欢
-    score_thr = 4
+    score_thr = 4.0
     # user-genre中间表，key:user, value:dict, key:genre, value:score
     record_tmp = {}
     user_profile = {}
-    for user, item, rate, date in data:
+    for user, item, rate, ts in data:
         # 小于阈值的数据忽略
         if rate < score_thr:
             continue
@@ -173,7 +239,7 @@ def getUserProfile(data, item_genre, K=2):
                 # 初始化用户对每种风格的电影兴趣度
                 record_tmp[user][genre] = 0
             # 用户风格兴趣度=电影评分*电影中该类型的权重比*时间权重
-            record_tmp[user][genre] += rate * item_genre[item][genre] * getTimeScore(str2timestamp(date))
+            record_tmp[user][genre] += rate * item_genre[item][genre] * getTimeScore(int(ts))
 
     for user in record_tmp:
         if user not in user_profile:
@@ -189,35 +255,41 @@ def getUserProfile(data, item_genre, K=2):
                                          round(user_profile[user][index][1] / total_score, 3))
     return user_profile
 
+
 # 获取全局热门电影
 def getHotItem(df_train, N=5):
-    # 输入：
-    #	df_train: 训练数据集
-    #	N：推荐的电影数
-    # 输出：
-    #	rank：字典，热门电影列表 {item_t:rate1, item_k:rate2}
+    """
+    param:
+        df_train: 训练数据集 type:dataframe
+        N: 推荐的电影数
+    return: 
+        hot_rank: 该用户的推荐热门电影列表 type:dict, key:user, value:dict, key:item, value:sim
+    """
     item_count = df_train.groupby('Movie')['Rating'].count().sort_values(ascending=False)
 
     hot_rank = {}
 
     r = 0
     for item_id in item_count[0:N].index:
-        hot_rank[item_id] = 1 - 0.01*r
+        hot_rank[item_id] = 1 - 0.01 * r
         r += 1
     return hot_rank
 
+
 # 推荐系统
-def recommendation(genre_item, user_profile, user, user_item, hot_rank, R=5):
-    # 输入：
-    #   genre_item: genre-item排列表，记录每种风格中评分高的电影，\
-    #                type dict, key: genre, value:list [item1, item2, ...]
-    #   user_profile: 记录用户喜爱的风格和兴趣度，type:dict, key:user, value:list [genre, score]
-    #   user: 用户id
-    #   user_item: 字典 {user1 : {item1 : rate1, item2 : rate2}, ...}}
-    #   hot_rank: 热门电影列表
-    #   R: 推荐的电影数目
-    # 输出：
-    #   recom_result: 推荐列表 type:dict, key:user, value:list [item1, item2, ...]
+def recommendation(genre_item, user_profile, user, user_item, hot_rank, R=30):
+    """
+    param:
+        genre_item: genre-item排列表，记录每种风格中评分高的电影，\
+                   type dict, key: genre, value:list [item1, item2, ...]
+        user_profile: 记录用户喜爱的风格和兴趣度，type:dict, key:user, value:list [genre, score]
+        user: 用户id
+        user_item: 用户-电影排列表 type:dict, key=user, value=dict, key=item, value=rate
+        hot_rank: 热门电影列表, type:dict, key:user, value:dict, key:item, value:sim
+        R: 推荐列表中电影个数
+    return: 
+        recom_result: 推荐列表 type:dict, key:user, value:list [item1, item2, ...]
+    """
 
     # 用户已观看的电影集合
     watched_item_list = user_item[user]
@@ -242,20 +314,20 @@ def recommendation(genre_item, user_profile, user, user_item, hot_rank, R=5):
 
 if __name__ == '__main__':
     start = time.time()
-    # 读取数据,这是没有shuffle的数据
-    df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_train_s.csv', \
-                           usecols=[1, 2, 3, 4])
+    # 读取数据
+    df_train = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1/v1_train.csv')
 
-    df_test = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_test_s.csv', \
-                          usecols=[1, 2, 3])
+    df_test = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1/v1_test.csv', \
+                          usecols=[0, 1, 2])
+
 
     # print(df_train.sample(5))
     # 推荐电影数
-    reco_num = 5
+    reco_num = 30
     # 计算item平均得分
     ave_score = getItemAveScore(df_train[['User', 'Movie', 'Rating']].values)
 
-    movie_info_path = '/home/zwj/Desktop/recommend/small_data/movie_info_s.csv'
+    movie_info_path = '/home/zwj/Desktop/recommend/movielens/moive_database/v1/v1_movie_info.csv'
     # 获取item-genre和genre-item排列表
     item_genre, genre_item = getItemgenre(movie_info_path, ave_score)
     # 用户画像
@@ -263,18 +335,16 @@ if __name__ == '__main__':
     # 热门电影列表
     hot_movie = getHotItem(df_train[['User', 'Movie', 'Rating']], reco_num)
     # 生成user-tiem排列表
-    user_item = UserItemDict(df_train[['User', 'Movie', 'Rating']].values)
-
+    user_item = userItemDict(df_train[['User', 'Movie', 'Rating']].values)
 
     # 定义test集的推荐字典
     test_reco_list = {}
     for test_user in df_test['User'].unique():
-        print('user {} recommend'.format(test_user))
-        recom_result = recommendation(genre_item, user_profile, test_user, user_item, hot_movie)
+        recom_result = recommendation(genre_item, user_profile, test_user, user_item, hot_movie, reco_num)
         # 合并到总的推荐字典中
         test_reco_list.update(recom_result)
     # user-item排列表
-    test_user_item = UserItemDict(df_test.values)
+    test_user_item = userItemDict(df_test.values)
     # 计算召回率和准确率
     recall, precision = precisionRecall(test_user_item, test_reco_list)
 

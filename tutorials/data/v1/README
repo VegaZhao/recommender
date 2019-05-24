@@ -1,0 +1,76 @@
+概括说明：
+================================================================================
+v1版本数据集：
+
+	* 该数据集收集了从1997年9月19日到1998年4月22日的用户评分数据。
+	* 包含943位用户和1035部电影的69615个样本。
+	* 数据均用csv格式存储。
+	* rating是（1-5）的用户对电影的评分。
+	* 将该数据集按4/1拆分成无交集的训练集和测试集分别保存到v1_train.csv和v1_test.csv文件中。
+	* 提供电影的信息和用户信息
+
+文件说明：
+================================================================================
+v1_train.csv:
+	* 包含943位用户和1027部电影的55675个样本
+	* 字段包括：userId, movieId, rating, timestamp
+	
+v1_test.csv
+	* 包含458位用户和905部电影的13940个样本
+	* 字段包括：userId, movieId, rating, timestamp
+
+v1_movie_info.csv：
+	* 电影信息表，包含1931年到1998年的1036部英文电影详细信息
+	* 字段包括：id, title, year, overview, vote_count, runtime, genres
+	其中，电影风格genres包括：
+		* Action
+		* Adventure
+		* Animation
+		* Comedy
+		* Crime
+		* Documentary
+		* Drama
+		* Fantasy
+		* Horror
+		* Mystery
+		* Romance
+		* Thriller
+		* War
+		* Western
+		* Family
+		* Science Fiction
+		* Music
+		* History
+		* TV Movie
+		* Foreign
+
+v1_user_info.csv
+	* 用户信息表，包含943位用户的基本信息
+	* 字段包括：id, age, gender, occupation
+	其中，性别gender包括：
+		* M  (male)
+		* F  (female)
+	其中，职业occupation包括：
+		* technician
+		* writer
+		* executive
+		* administrator
+		* student
+		* lawyer
+		* educator
+		* scientist
+		* entertainment
+		* programmer
+		* librarian
+		* homemaker
+		* artist
+		* engineer
+		* marketing
+		* healthcare
+		* salesman
+		* doctor
+		* retired
+		* other
+		* none
+	
+

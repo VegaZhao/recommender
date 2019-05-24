@@ -18,7 +18,7 @@ def userItemDict(data):
     param：
         data: lsit [user, item, rating]
     return：
-        user_item: 用户-电影排列表 type:dict, key:user, value:dict, key:item, value: rate    
+        user_item: 用户-电影排列表 type:dict, key:user, value:dict, key:item, value: rate
     """
     user_item = {}
     for user, item, rate in data:
@@ -32,14 +32,14 @@ def userItemDict(data):
 def trainModel(df_train):
     """
     param：
-        df_train: 训练数据dataframe格式 包含字段 ('User', 'Movie', 'Rating')
-    return: 
+        df_train: 训练数据dataframe格式 包含字段 ('userId', 'movieId', 'rating')
+    return:
         algo: 训练好的模型
     """
     # 读取数据
     reader = Reader()
     algo = SVD()
-    data = Dataset.load_from_df(df_train[['User', 'Movie', 'Rating']], reader)
+    data = Dataset.load_from_df(df_train[['userId', 'movieId', 'rating']], reader)
     ###################### train ######################
     # 训练模型
     # 方式 1: 交叉验证
@@ -64,7 +64,7 @@ def getHotItem(df_train, N=5):
     return：
         rank：字典，该用户的推荐电影列表 {user_id: {item_t:rate1, item_k:rate2}}
     """
-    item_count = df_train.groupby('Movie')['Rating'].count().sort_values(ascending=False)
+    item_count = df_train.groupby('movieId')['rating'].count().sort_values(ascending=False)
 
     hot_rank = {}
 
@@ -121,7 +121,7 @@ def precisionRecall(test, recommend):
     param：
         test: 测试集用户-电影排列表 type:dict, key:user, value:dict, key:item, value: rate
         recommend: 用户推荐电影字典 type:dict, key:user, value:dict, key:item, value:score
-    return: 
+    return:
         [召回率, 准确率]
     """
     # 推荐列表命中数
@@ -150,7 +150,7 @@ def precisionRecall(test, recommend):
 def sampleData(data, thres_rate):
     """
     param:
-        data: 二维矩阵 [item, user, rate] 
+        data: 二维矩阵 [item, user, rate]
         thres_rate: 评分转成0/1分类的阈值
     return:
         train_data 调整正负样本数之后的训练数据 type:list [(user, item, class)]
@@ -188,29 +188,29 @@ if __name__ == '__main__':
 
     start = time.time()
     # 读取数据
-    df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_train.csv', \
-                           usecols=[1, 2, 3])
+    df_train = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_train.csv', \
+                           usecols=[0, 1, 2])
 
-    df_test = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_test.csv', \
-                          usecols=[1, 2, 3])
+    df_test = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_test.csv', \
+                          usecols=[0, 1, 2])
     # sample num: 35497
     print(len(df_train), len(df_test))
 
     # 推荐电影数
-    reco_num = 5
+    reco_num = 30
     # 评分转成0/1分类的阈值
     thres_rate = 4.0
     hot_rank = getHotItem(df_train, reco_num)
 
     ######################两种训练数据######################
     # 未调整正负样本数
-    # df_train['Rating'] = df_train['Rating'].apply(lambda x: 1.0 if x>=4.0 else 0.0)
-    # algo = trainModel(df_train)
+    # df_train['rating'] = df_train['rating'].apply(lambda x: 1.0 if x>=thres_rate else 0.0)
+    algo = trainModel(df_train)
 
     # 调整正负样本数 1：1
-    train_data = sampleData(df_train.values, thres_rate)
-    df_sample = pd.DataFrame(train_data, columns=['User', 'Movie', 'Rating'])
-    algo = trainModel(df_sample)
+    # train_data = sampleData(df_train.values, thres_rate)
+    # df_sample = pd.DataFrame(train_data, columns=['userId', 'movieId', 'rating'])
+    # algo = trainModel(df_sample)
     ###################################################
 
     # 生成user-tiem排列表
@@ -219,9 +219,9 @@ if __name__ == '__main__':
 
     # 定义test集的推荐字典
     test_reco_list = {}
-    for test_user in df_test['User'].unique():
+    for test_user in df_test['userId'].unique():
         # 生成单用户推荐列表
-        rank_list = recommendation(algo, user_item, test_user, df_train['Movie'].unique(), hot_rank, reco_num)
+        rank_list = recommendation(algo, user_item, test_user, df_train['movieId'].unique(), hot_rank, reco_num)
         # 合并到总的推荐字典中
         test_reco_list.update(rank_list)
 

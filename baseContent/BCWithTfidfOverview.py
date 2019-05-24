@@ -26,11 +26,13 @@ def UserItemDict(data):
 
 # 获取全局热门电影
 def getHotItem(df_train, N=5):
-    # 输入：
-    #	df_train: 训练数据集
-    #	N：推荐的电影数
-    # 输出：
-    #	rank：字典，热门电影列表 {item_t:rate1, item_k:rate2}
+    """
+    param：
+        df_train: 训练数据集
+        N：推荐的电影数
+    return：
+        rank：字典，该用户的推荐电影列表 {user_id: {item_t:rate1, item_k:rate2}}
+    """
     item_count = df_train.groupby('Movie')['Rating'].count().sort_values(ascending=False)
 
     hot_rank = {}
@@ -43,6 +45,13 @@ def getHotItem(df_train, N=5):
 
 # 准确度/召回评价
 def precisionRecall(test, recommend):
+    """
+    param：
+        test: 测试集用户-电影排列表 type:dict, key:user, value:dict, key:item, value: rate
+        recommend: 用户推荐电影字典 type:dict, key:user, value:dict, key:item, value:score
+    return:
+        [召回率, 准确率]
+    """
     # 推荐列表命中数
     hit = 0
     # 召回率分母（测试集中用户观看电影数）
@@ -65,12 +74,19 @@ def precisionRecall(test, recommend):
 
     return [hit / (1.0 * n_recall), hit / (1.0 * n_precision)]
 
-def overviewSimReco(movie_id = 12918, n = 10):
+def overviewSimReco(movie_id, n):
+    """
+    param:
+        movie_id: 电影ID号
+        n: 前n部相似电影
+    return: 
+        reco_list:  推荐电影列表 type:dict key:movieid value:sim_score
+    """
     # title:Men in Black id:12918
     # 加载电影信息
-    train_movie_set = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_train_s.csv')['Movie'].unique()
-    movie_metadata_raw = pd.read_csv('/home/zwj/Desktop/recommend/download/normalize_data/movie_info.csv',\
-            usecols = [1, 3, 4])
+    train_movie_set = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_train.csv')['Movie'].unique()
+    movie_metadata_raw = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_movie_info.csv',\
+            usecols = [0, 1, 3])  #id title overview
 
     # 将电影名称设置为dataframe索引
     movie_metadata = movie_metadata_raw[movie_metadata_raw['id'].isin(train_movie_set)].set_index('id')
@@ -113,15 +129,16 @@ def overviewSimReco(movie_id = 12918, n = 10):
 
 # 推荐电影
 def recommendation(user_item, user_id, hot_rank, K, R):
-    # 输入：
-    #	user_item: 字典 {user1 : {item1 : rate1, item2 : rate2}, ...}}
-    #	user_id：推荐的用户id
-    #	W：电影相似矩阵
-    #	K：前K个最相似电影
-    #   R：推荐列表中电影个数
-    #   hot_rank: 热门电影列表
-    # 输出：
-    #	rank：字典，该用户的推荐电影列表 {user_id: {item_t:sim1, item_k:sim2}}
+    """
+    param：
+        user_item: 训练集中user-item字典 {user1 : {item1 : rate1, item2 : rate2}, ...}}
+        user_id：推荐的用户id
+        hot_rank: 热门电影列表
+        K：前K个最相似电影
+        R：推荐列表中电影个数
+    return：
+        rank_sorted：该用户的推荐电影列表 type:dict, key:user, value:dict, key:item, value:score
+    """
 
     # 存储用户推荐电影
     rank = {}
@@ -156,15 +173,17 @@ def recommendation(user_item, user_id, hot_rank, K, R):
 if __name__ == '__main__':
 
     start = time.time()
-    # 读取数据,这是没有shuffle的数据
-    df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_train_s.csv', \
-                          usecols=[1, 2, 3])
+    # 读取数据
+    df_train = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_train.csv', \
+                           usecols=[0, 1, 2])
 
-    df_test = pd.read_csv('/home/zwj/Desktop/recommend/small_data/movie_test_s.csv', \
-                          usecols=[1, 2, 3])
+    df_test = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_test.csv', \
+                          usecols=[0, 1, 2])
 
     # 推荐电影数
-    reco_num = 5
+    reco_num = 30
+    # 加权求和计算的相似项个数
+    sim_num = 20
     hot_rank = getHotItem(df_train, reco_num)
 
     # 生成user-tiem排列表
@@ -175,7 +194,7 @@ if __name__ == '__main__':
     for test_user in df_test['User'].unique():
         print('user {} recommend'.format(test_user))
         # 生成单用户推荐列表
-        rank_list = recommendation(user_item, int(test_user), hot_rank, 10, reco_num)
+        rank_list = recommendation(user_item, int(test_user), hot_rank, sim_num, reco_num)
         # 合并到总的推荐字典中
         test_reco_list.update(rank_list)
 

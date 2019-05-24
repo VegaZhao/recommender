@@ -8,12 +8,14 @@ import operator
 import time
 from sklearn.utils import shuffle
 
-# item相似矩阵相似度最大值归一化（一种优化方案）
+# 相似矩阵相似度最大值归一化（一种优化方案）
 def normalizeSimilarity(dict):
-    # 输入：
-    #	二维字典 {item_i: {item_k: similarity}}
-    # 输出：
-    #	二维字典 {item_i: {item_k: similarity}}
+    """
+    param:
+        dict: 相似度字典 type: key=item_i value=dict, key=item_j value=similarity
+    return:
+        dict: 归一化的相似度字典 type: key=item_i value=dict, key=item_j value=similarity
+    """
     maxW = 0
 
     # 找到相似矩阵中相似度的最大值
@@ -29,15 +31,19 @@ def normalizeSimilarity(dict):
 
     return dict
 
+
 # 按比例随机分配训练数据和测试数据
 def splitData(data, M, k, seed):
-    # 输入：
-    #	data: 二维矩阵 [item, user, rating]
-    #	M：测试集占比，训练集:测试集 = M:1
-    #	k：保留随机数等于k的样本
-    #	seed：随机种子
-    # 输出：
-    #	train, test 二维列表 [item, user, rating]
+    """
+    param:
+        data: 二维矩阵 [user, item, rating]
+        M: 测试集占比，训练集:测试集 = M:1
+        k: 选取前k个相似item
+        seed: 随机种子
+    return:
+        train: 训练数据 二维列表 [user, item, rating]
+        test: 测试数据 二维列表 [user, item, rating]
+    """
     test = []
     train = []
     random.seed(seed)
@@ -48,25 +54,31 @@ def splitData(data, M, k, seed):
             train.append([user, item, rate])
     return train, test
 
+
 # 将列表转成user-item字典
 def userItemDict(data):
-    # 输入：
-    #	data: lsit [user, item, rating]
-    # 输出：
-    #	user_item: 用户-电影排列表 type:dict, key:user, value:dict, key:item, value: rate
+    """
+    param:
+        data: lsit [user, item, rating]
+    return:
+        user_item: 用户-电影排列表 type:dict, key=user, value=dict, key=item, value=rate
+    """
     user_item = {}
     for user, item, rate in data:
         if user not in user_item:
             user_item[user] = {}
-        user_item[user].update({item : rate})
+        user_item[user].update({item: rate})
     return user_item
 
 # 将列表转成item-user字典
 def itemUserDict(data):
-    # 输入：
-    #	data: lsit [user, item, rating]
-    # 输出：
-    #	item_user: 电影-用户倒排表 type:dict, key:item, value:list, [user1, user2, ...]
+    """
+    param:
+        data: lsit [user, item, rating]
+    return:
+        item_user: 电影-用户倒排表 type:dict, key:item, value:list, [user1, user2, ...]
+    """
+
     item_user = {}
     for user, item, rate in data:
         if item not in item_user:
@@ -76,10 +88,12 @@ def itemUserDict(data):
 
 # 计算item之间的相似度
 def userSimilarity(item_user):
-    # 输入：
-    #	item_user: 电影-用户倒排表 type:dict, key:item, value:list, [user1, user2, ...]
-    # 输出：
-    #   W: 用户相似度矩阵，type:dict, key:user_u, value:dict, key:user_v, value:similarity
+    """
+    param:
+        item_user: 电影-用户倒排表 type:dict, key:item, value:list, [user1, user2, ...]
+    return: 
+        W：用户相似度矩阵，type:dict, key:user_u, value:dict, key:user_v, value:similarity
+    """
 
     # C[u][v]存储观看用户u和v共同看的电影数
     C = {}
@@ -96,9 +110,9 @@ def userSimilarity(item_user):
                 C[user_u].setdefault(user_v, 0)
                 # 统计用户u和用户v观看的电影数
                 # 1.传统方法
-                C[user_u][user_v] += 1
+                # C[user_u][user_v] += 1
                 # 2.优化方法，削弱了热门电影的贡献度，电影观看的人数越多其影响越弱
-                # C[user_u][user_v] += 1 / math.log(1 + len(users) * 1.0)
+                C[user_u][user_v] += 1 / math.log(1 + len(users) * 1.0)
 
     # 用户相似矩阵
     W = {}
@@ -123,15 +137,17 @@ def userSimilarity(item_user):
 
 # 推荐电影
 def recommendation(user_item, user_id, W, hot_rank, K, R):
-    # 输入：
-    #	user_item: 用户-电影排列表 type:dict, key:user, value:dict, key:item, value: rate
-    #	user_id：推荐的用户id
-    #	W: 用户相似度矩阵，type:dict, key:user_u, value:dict, key:user_v, value:similarity
-    #   hot_rank: 热门电影列表
-    #   K：前K个最相似用户
-    #   R：推荐列表中电影个数
-    # 输出：
-    #	rank_sorted：该用户的推荐电影列表 type:dict, key:user, value:dict, key:item, value:sim
+    """
+    param:
+        user_item: 用户-电影排列表 type:dict, key:user, value:dict, key:item, value:rate
+        user_id: 推荐的用户id
+        W: 用户相似度矩阵，type:dict, key:user_u, value:dict, key:user_v, value:similarity
+        hot_rank: 热门电影列表, type:dict, key:user, value:dict, key:item, value:sim
+        K: 前K个最相似用户
+        R: 推荐列表中电影个数
+    return: 
+        rank_sorted：该用户的推荐电影列表 type:dict, key:user, value:dict, key:item, value:sim
+    """
 
     # 存储用户推荐电影
     rank = {}
@@ -166,8 +182,15 @@ def recommendation(user_item, user_id, W, hot_rank, K, R):
     rank_sorted[user_id] = sorted(rank[user_id].items(), key=operator.itemgetter(1), reverse=True)[0:R]
 
     return rank_sorted
-
+# 准确度/召回评价
 def precisionRecall(test, recommend):
+    """
+    param：
+        test: 测试集用户-电影排列表 type:dict, key:user, value:dict, key:item, value: rate
+        recommend: 用户推荐电影字典 type:dict, key:user, value:dict, key:item, value:score
+    return: 
+        [召回率, 准确率]
+    """
     # 推荐列表命中数
     hit = 0
     # 召回率分母（测试集中用户观看电影数）
@@ -192,11 +215,13 @@ def precisionRecall(test, recommend):
 
 # 获取全局热门电影
 def getHotItem(df_train, N=5):
-    # 输入：
-    #	df_train: 训练数据集
-    #	N：推荐的电影数
-    # 输出：
-    #	rank：用户的推荐电影列表 type:dict, key:user, value:dict, key:item, value:sim
+    """
+    param:
+        df_train: 训练数据集 type:dataframe
+        N: 推荐的电影数
+    return: 
+        hot_rank: 该用户的推荐热门电影列表 type:dict, key:user, value:dict, key:item, value:sim
+    """
     item_count = df_train.groupby('Movie')['Rating'].count().sort_values(ascending=False)
 
     hot_rank = {}
@@ -210,16 +235,18 @@ def getHotItem(df_train, N=5):
 if __name__ == '__main__':
 
     start = time.time()
-    # 读取数据,这是没有shuffle的数据
-    df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_train.csv', \
-                          usecols=[1, 2, 3])
+    # 读取数据
+    df_train = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_train.csv', \
+                           usecols=[0, 1, 2])
 
-    df_test = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_test.csv', \
-                          usecols=[1, 2, 3])
+    df_test = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_test.csv', \
+                          usecols=[0, 1, 2])
     # sample num: 35497
     print(len(df_train), len(df_test))
     # 推荐电影数
-    reco_num = 5
+    reco_num = 30
+    # 加权求和计算的相似项个数
+    sim_num = 20
     hot_rank = getHotItem(df_train, reco_num)
     # 生成user-tiem排列表
     user_item = userItemDict(df_train.values)
@@ -233,7 +260,7 @@ if __name__ == '__main__':
     # 遍历test数据集
     for test_user in df_test['User'].unique():
         # 生成单用户推荐列表
-        rank_list = recommendation(user_item, int(test_user), user_sim, hot_rank, 20, reco_num)
+        rank_list = recommendation(user_item, int(test_user), user_sim, hot_rank, sim_num, reco_num)
         # 合并到总的推荐字典中
         test_reco_list.update(rank_list)
     print test_reco_list

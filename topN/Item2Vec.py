@@ -66,7 +66,7 @@ def precisionRecall(test, recommend):
     return [hit / (1.0 * n_recall), hit / (1.0 * n_precision)]
 
 # 将列表转成itemWord字典
-def itemWord(data):
+def itemWord(data, save_file):
     # 输入：
     #   data: type:ndarray [[user, item, rating],[...]]
     # 将data转成如下字典格式，注意itemid存储的是字符串
@@ -83,7 +83,7 @@ def itemWord(data):
             user_itemWord[user].append(str(int(item)))
     # 保存user_itemWord中values部分['itemid1', 'itemid2']，每个用户的item集合为一行，看作一个句子
 
-    fw = open('/home/zwj/zwj/itemWord.txt', 'w+')
+    fw = open(save_file, 'w+')
     for user in user_itemWord:
         fw.write(" ".join(user_itemWord[user]) + "\n")
     fw.close()
@@ -214,23 +214,25 @@ def recommendation(user_item, user_id, hot_rank, item_vec, K, R):
 if __name__ == '__main__':
     start = time.time()
     # 读取数据
-    df_train = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_train.csv', \
-                          usecols=[1, 2, 3])
+    df_train = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1/v1_train.csv', \
+                          usecols=[0, 1, 2])
 
-    df_test = pd.read_csv('/home/zwj/Desktop/recommend/small_data/ft_ratings_test.csv', \
-                          usecols=[1, 2, 3])
-    # sample num: 35497
+    df_test = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1/v1_test.csv', \
+                          usecols=[0, 1, 2])
     print(len(df_train), len(df_test))
 
     # item转词向量（执行一次即可，也可单独执行）
-    itemWord(df_train.values)
+    # item_word_file = '/home/zwj/Desktop/recommend/movielens/moive_database/v1/train_itemWord.txt'
+    # itemWord(df_train.values, item_word_file)
 
     # 加载item词向量
-    input_file = '/home/zwj/zwj/data/itemVec.txt'
-    item_vec = loadItemVec(input_file)
+    item_vec_file = '/home/zwj/Desktop/recommend/movielens/moive_database/v1/train_itemVec.txt'
+    item_vec = loadItemVec(item_vec_file)
 
     # 推荐电影数
-    reco_num = 5
+    reco_num = 30
+    # 加权求和计算的相似项个数
+    sim_num = 20
 
     # 热门电影列表
     hot_rank = getHotItem(df_train, reco_num)
@@ -244,7 +246,7 @@ if __name__ == '__main__':
     for test_user in df_test['User'].unique():
         print('user {} recommend'.format(test_user))
         # 生成单用户推荐列表
-        rank_list = recommendation(user_item, int(test_user), hot_rank, item_vec, 10, 5)
+        rank_list = recommendation(user_item, int(test_user), hot_rank, item_vec, sim_num, reco_num)
         # 合并到总的推荐字典中
         test_reco_list.update(rank_list)
     # test集中user实际观看的电影集合

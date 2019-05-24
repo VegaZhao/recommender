@@ -20,8 +20,8 @@ def statistics(df):
 
     movie_statistics = df.groupby('Movie')['Rating'].count().sort_values(ascending=False)
     user_statistics = df.groupby('User')['Rating'].count().sort_values(ascending=False)
-    movie_num = df['Movie'].unique()
-    user_num = df['User'].unique()
+    movie_num = len(df['Movie'].unique())
+    user_num = len(df['User'].unique())
     
     return movie_num, user_num, movie_statistics, user_statistics
 
