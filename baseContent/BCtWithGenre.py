@@ -265,7 +265,7 @@ def getHotItem(df_train, N=5):
     return: 
         hot_rank: 该用户的推荐热门电影列表 type:dict, key:user, value:dict, key:item, value:sim
     """
-    item_count = df_train.groupby('Movie')['Rating'].count().sort_values(ascending=False)
+    item_count = df_train.groupby('movieId')['rating'].count().sort_values(ascending=False)
 
     hot_rank = {}
 
@@ -325,7 +325,7 @@ if __name__ == '__main__':
     # 推荐电影数
     reco_num = 30
     # 计算item平均得分
-    ave_score = getItemAveScore(df_train[['User', 'Movie', 'Rating']].values)
+    ave_score = getItemAveScore(df_train[['userId', 'movieId', 'rating']].values)
 
     movie_info_path = '/home/zwj/Desktop/recommend/movielens/moive_database/v1/v1_movie_info.csv'
     # 获取item-genre和genre-item排列表
@@ -333,13 +333,13 @@ if __name__ == '__main__':
     # 用户画像
     user_profile = getUserProfile(df_train.values, item_genre)
     # 热门电影列表
-    hot_movie = getHotItem(df_train[['User', 'Movie', 'Rating']], reco_num)
+    hot_movie = getHotItem(df_train[['userId', 'movieId', 'rating']], reco_num)
     # 生成user-tiem排列表
-    user_item = userItemDict(df_train[['User', 'Movie', 'Rating']].values)
+    user_item = userItemDict(df_train[['userId', 'movieId', 'rating']].values)
 
     # 定义test集的推荐字典
     test_reco_list = {}
-    for test_user in df_test['User'].unique():
+    for test_user in df_test['userId'].unique():
         recom_result = recommendation(genre_item, user_profile, test_user, user_item, hot_movie, reco_num)
         # 合并到总的推荐字典中
         test_reco_list.update(recom_result)

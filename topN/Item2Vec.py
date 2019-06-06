@@ -4,15 +4,16 @@ import pandas as pd
 import numpy as np
 import operator
 import time
-from sklearn.utils import shuffle
 from sklearn.metrics.pairwise import cosine_similarity
 
 # 将列表转成user-item字典
 def userItemDict(data):
-    # 输入：
-    #   data: type:ndarray [[user, item, rating],[...]]
-    # 输出：
-    #   user_item 用户商品排列表 type:dict {user_id: {item_t:rate1, item_k:rate2}}
+    """
+    param:
+        data: lsit [user, item, rating]
+    return:
+        user_item: 用户-电影排列表 type:dict, key=user, value=dict, key=item, value=rate
+    """
     user_item = {}
     for user, item, rate in data:
         if user not in user_item:
@@ -22,14 +23,16 @@ def userItemDict(data):
 
 # 获取全局热门电影
 def getHotItem(df_train, N=5):
-    # 输入：
-    #	df_train: 训练数据集
-    #	N：推荐的电影数
-    # 输出：
-    #	rank：该用户的推荐电影列表 type:dict {user_id: {item_t:score1, item_k:score2}}
+    """
+    param:
+        df_train: 训练数据集 type:dataframe
+        N: 推荐的电影数
+    return: 
+        hot_rank: 该用户的推荐热门电影列表 type:dict, key:user, value:dict, key:item, value:sim
+    """
 
     # 电影观看量统计，并且降序排列
-    item_count = df_train.groupby('Movie')['Rating'].count().sort_values(ascending=False)
+    item_count = df_train.groupby('movieId')['rating'].count().sort_values(ascending=False)
 
     # 定义热门电影字典
     hot_rank = {}
@@ -43,6 +46,13 @@ def getHotItem(df_train, N=5):
 
 # 准确度/召回评价
 def precisionRecall(test, recommend):
+    """
+    param：
+        test: 测试集用户-电影排列表 type:dict, key:user, value:dict, key:item, value: rate
+        recommend: 用户推荐电影字典 type:dict, key:user, value:dict, key:item, value:score
+    return: 
+        [召回率, 准确率]
+    """
     # 推荐列表命中数
     hit = 0
     # 召回率分母（测试集中用户观看电影数）
@@ -67,11 +77,13 @@ def precisionRecall(test, recommend):
 
 # 将列表转成itemWord字典
 def itemWord(data, save_file):
-    # 输入：
-    #   data: type:ndarray [[user, item, rating],[...]]
+    """
+    param:
+        data: type:ndarray [[user, item, rating],[...]]
+        save_file: itemword保持文件路径
+    """
     # 将data转成如下字典格式，注意itemid存储的是字符串
     # {userid1: ['itemid1', 'itemid2'], userid2: [...], ...}
-
     user_itemWord = {}
     for user, item, rate in data:
         if user not in user_itemWord:
@@ -91,10 +103,12 @@ def itemWord(data, save_file):
 
 # 从word2vec工具生成的文件中加载item_vec
 def loadItemVec(input_file):
-    # 输入：
-    #   input_file: 词向量文件路径
-    # 输出：
-    #   item_vec：type:dict key:userid values:词向量
+    """
+    param:
+        input_file: 词向量文件路径
+    return:
+        item_vec：type:dict key:userid values:词向量
+    """
     if not os.path.exists(input_file):
         print('input file not found!')
         return {}
@@ -121,13 +135,14 @@ def loadItemVec(input_file):
 
 # 计算item_vec的相似度
 def calItemSim(item_vec, item_id, K=10):
-    # 输入：
-    #   item_vec: type:dict key:userid values:词向量
-    #   item_id: 物品id
-    #   K： 考虑相似item的个数，默认为10
-    # 输出：
-    #   score：返回与item_id相似的id及相似度，type:list [(itemid1, sim1), (itemid2, sim2)]
-
+    """
+    param:
+        item_vec: type:dict key:userid values:词向量
+        item_id: 电影id
+        K: 考虑相似item的个数，默认为10
+    return: 
+        score：返回与item_id相似的id及相似度，type:list [(itemid1, sim1), (itemid2, sim2)]
+    """
     # 如果item_id不在item向量字典中，返回空
     if item_id not in item_vec:
         return
@@ -160,16 +175,17 @@ def calItemSim(item_vec, item_id, K=10):
 
 # 推荐电影
 def recommendation(user_item, user_id, hot_rank, item_vec, K, R):
-    # 输入：
-    #	user_item: 字典 {user1 : {item1 : rate1, item2 : rate2}, ...}}
-    #	user_id：推荐的用户id
-    #   hot_rank: 热门电影列表
-    #   item_vec: item词向量
-    #	K：前K个最相似电影
-    #   R：推荐列表中电影个数
-    # 输出：
-    #	rank：字典，该用户的推荐电影列表 {user_id: {item_t:sim1, item_k:sim2}}
-
+    """
+    param:
+        user_item: 用户-电影排列表 type:dict, key:user, value:dict, key:item, value:rate
+        user_id: 推荐的用户id
+        hot_rank: 热门电影列表, type:dict, key:user, value:dict, key:item, value:sim
+        item_vec: item词向量
+        K: 前K个最相似用户
+        R: 推荐列表中电影个数
+    return: 
+        rank_sorted：该用户的推荐电影列表 type:dict, key:user, value:dict, key:item, value:sim
+    """
     # 存储用户推荐电影
     rank = {}
     # 开辟用户空子字典 ('rank: ', {user_id: {}})
@@ -243,7 +259,7 @@ if __name__ == '__main__':
     # 定义test集的推荐字典
     test_reco_list = {}
     # 遍历test集中的所有用户
-    for test_user in df_test['User'].unique():
+    for test_user in df_test['userId'].unique():
         print('user {} recommend'.format(test_user))
         # 生成单用户推荐列表
         rank_list = recommendation(user_item, int(test_user), hot_rank, item_vec, sim_num, reco_num)

@@ -33,7 +33,7 @@ def getHotItem(df_train, N=5):
     return：
         rank：字典，该用户的推荐电影列表 {user_id: {item_t:rate1, item_k:rate2}}
     """
-    item_count = df_train.groupby('Movie')['Rating'].count().sort_values(ascending=False)
+    item_count = df_train.groupby('movieId')['rating'].count().sort_values(ascending=False)
 
     hot_rank = {}
 
@@ -84,7 +84,7 @@ def overviewSimReco(movie_id, n):
     """
     # title:Men in Black id:12918
     # 加载电影信息
-    train_movie_set = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_train.csv')['Movie'].unique()
+    train_movie_set = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_train.csv')['movieId'].unique()
     movie_metadata_raw = pd.read_csv('/home/zwj/Desktop/recommend/movielens/moive_database/v1_movie_info.csv',\
             usecols = [0, 1, 3])  #id title overview
 
@@ -191,7 +191,7 @@ if __name__ == '__main__':
 
     # 定义test集的推荐字典
     test_reco_list = {}
-    for test_user in df_test['User'].unique():
+    for test_user in df_test['userId'].unique():
         print('user {} recommend'.format(test_user))
         # 生成单用户推荐列表
         rank_list = recommendation(user_item, int(test_user), hot_rank, sim_num, reco_num)

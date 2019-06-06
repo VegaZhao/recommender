@@ -222,7 +222,7 @@ def getHotItem(df_train, N=5):
     return: 
         hot_rank: 该用户的推荐热门电影列表 type:dict, key:user, value:dict, key:item, value:sim
     """
-    item_count = df_train.groupby('Movie')['Rating'].count().sort_values(ascending=False)
+    item_count = df_train.groupby('movieId')['rating'].count().sort_values(ascending=False)
 
     hot_rank = {}
 
@@ -258,7 +258,7 @@ if __name__ == '__main__':
     test_reco_list = {}
 
     # 遍历test数据集
-    for test_user in df_test['User'].unique():
+    for test_user in df_test['userId'].unique():
         # 生成单用户推荐列表
         rank_list = recommendation(user_item, int(test_user), user_sim, hot_rank, sim_num, reco_num)
         # 合并到总的推荐字典中

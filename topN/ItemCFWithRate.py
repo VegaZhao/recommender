@@ -253,7 +253,7 @@ if __name__ == '__main__':
 
     # 定义test集的推荐字典
     test_reco_list = {}
-    for test_user in df_test['User'].unique():
+    for test_user in df_test['userId'].unique():
         # 生成单用户推荐列表
         rank_list = recommendation(user_item, int(test_user), item_sim, hot_rank, sim_num, reco_num)
         # 合并到总的推荐字典中

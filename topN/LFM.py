@@ -213,7 +213,7 @@ if __name__ == '__main__':
     # algo = trainModel(df_sample)
     ###################################################
 
-    # 生成user-tiem排列表
+    # 生成user-item排列表
     user_item = userItemDict(df_train.values)
     test_user_item = userItemDict(df_test.values)
 
